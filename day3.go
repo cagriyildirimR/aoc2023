@@ -52,7 +52,6 @@ func Day3() {
 	println(totalSum)
 
 	// Part 2
-
 	totalGearRatio := int64(0)
 	for _, v := range gears {
 		if len(v) == 2 {
