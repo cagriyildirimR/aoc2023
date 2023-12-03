@@ -6,26 +6,36 @@ import (
 	"unicode"
 )
 
-func DayOnePart1() {
-	err, input := Input(1)
+func Day1() {
+	err, calibrationInput := Input(1)
 	if err != nil {
-		fmt.Printf("Input error: %v", err)
+		fmt.Printf("Calibration data read error: %v", err)
 	}
 
-	var result int64
+	var sumOriginalValues int64
+	var sumAdjustedValues int64
 
-	for _, v := range input {
-		f := getFirstDigit(v)
-		s := getSecondDigit(v)
+	for _, calibrationLine := range calibrationInput {
+		firstDigitOriginal := getFirstDigit(calibrationLine)
+		secondDigitOriginal := getSecondDigit(calibrationLine)
 
-		tmp, _ := strconv.Atoi(f + s)
-		result += int64(tmp)
+		combinedDigits, _ := strconv.Atoi(firstDigitOriginal + secondDigitOriginal)
+		sumOriginalValues += int64(combinedDigits)
+
+		adjustedLine := replaceSpelledNumbersWithDigits(calibrationLine)
+
+		firstDigitAdjusted := getFirstDigit(adjustedLine)
+		secondDigitAdjusted := getSecondDigit(adjustedLine)
+
+		combinedAdjustedDigits, _ := strconv.Atoi(firstDigitAdjusted + secondDigitAdjusted)
+		sumAdjustedValues += int64(combinedAdjustedDigits)
 	}
-	println(result)
+
+	fmt.Printf("Part 1 Solution: Sum of Original Calibration Values is %v\n", sumOriginalValues)
+	fmt.Printf("Part 2 Solution: Sum of Adjusted Calibration Values is %v\n", sumAdjustedValues)
 }
 
 func getFirstDigit(ss string) string {
-
 	for _, v := range ss {
 		if unicode.IsDigit(v) {
 			return string(v)
@@ -44,26 +54,28 @@ func getSecondDigit(ss string) string {
 	return "error"
 }
 
-func DayOnePart2() {
-	err, input := Input(1)
-	if err != nil {
-		fmt.Printf("Input error: %v", err)
-	}
-
-	var result int64
-
-	for _, v := range input {
-		v = replaceLetters(v)
-		f := getFirstDigit(v)
-		s := getSecondDigit(v)
-
-		tmp, _ := strconv.Atoi(f + s)
-		result += int64(tmp)
-	}
-	println(result)
-}
-
-func replaceLetters(ss string) string {
+// replaceSpelledNumbersWithDigits takes a string `ss` and replaces occurrences of spelled-out numbers (one, two, three, ..., nine)
+// with their corresponding single-digit numerals (1, 2, 3, ..., 9). The function scans the string from left to right,
+// and upon encountering a spelled-out number, it replaces only the first character of the spelled-out number with the
+// corresponding digit. The rest of the characters in the spelled-out number are left unchanged.
+//
+// For example:
+// - "oneight" becomes "1eight" (replaces 'one' with '1').
+// - "twofive" becomes "2five" (replaces 'two' with '2').
+// - "threenine" becomes "3nine" (replaces 'three' with '3').
+//
+// The function is designed to work in a specific context where only the first and last digits in the resultant string
+// are considered significant for further processing. This behavior is crucial for the function's application in certain
+// scenarios, such as solving specific coding challenges or puzzles.
+//
+// Parameters:
+//
+//	ss (string): The input string to process.
+//
+// Returns:
+//
+//	string: A new string with spelled-out numbers replaced by their corresponding single-digit numerals.
+func replaceSpelledNumbersWithDigits(ss string) string {
 	var tmp = []byte(ss)
 	for i, s := range []byte(ss) {
 		switch s {
@@ -120,3 +132,65 @@ func replaceLetters(ss string) string {
 	}
 	return string(tmp)
 }
+
+// these functions don't work, but they are useful to know in similar situations
+//func replaceLettersX(s string) string {
+//	s = strings.ReplaceAll(s, "one", "1ne")
+//	s = strings.ReplaceAll(s, "two", "2wo")
+//	s = strings.ReplaceAll(s, "three", "3hree")
+//	s = strings.ReplaceAll(s, "four", "4our")
+//	s = strings.ReplaceAll(s, "five", "5ive")
+//	s = strings.ReplaceAll(s, "six", "6ix")
+//	s = strings.ReplaceAll(s, "seven", "7even")
+//	s = strings.ReplaceAll(s, "eight", "8ight")
+//	s = strings.ReplaceAll(s, "nine", "9ine")
+//	return s
+//}
+
+//func replaceLetters(s string) string {
+//	replacer := strings.NewReplacer(
+//		"one", "1ne",
+//		"two", "2wo",
+//		"three", "3hree",
+//		"four", "4our",
+//		"five", "5ive",
+//		"six", "6ix",
+//		"seven", "7even",
+//		"eight", "8eight",
+//		"nine", "9ine",
+//	)
+//	return replacer.Replace(s)
+//}
+
+//func replaceLetters(s string) string {
+//	numberWords := map[string]string{
+//		"one":   "1",
+//		"two":   "2",
+//		"three": "3",
+//		"four":  "4",
+//		"five":  "5",
+//		"six":   "6",
+//		"seven": "7",
+//		"eight": "8",
+//		"nine":  "9",
+//	}
+//
+//	var result strings.Builder
+//	for len(s) > 0 {
+//		matchFound := false
+//		for word, digit := range numberWords {
+//			if strings.HasPrefix(s, word) {
+//				result.WriteString(digit)
+//				s = s[len(word):]
+//				matchFound = true
+//				break
+//			}
+//		}
+//		if !matchFound {
+//			result.WriteByte(s[0])
+//			s = s[1:]
+//		}
+//	}
+//
+//	return result.String()
+//}

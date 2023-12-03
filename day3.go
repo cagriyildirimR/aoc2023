@@ -9,7 +9,7 @@ import (
 func Day3() {
 	_, engineSchematic := Input(3)
 
-	var engineSchematicByte [][]byte
+	var engineSchematicByte [][]byte // we check address of star
 
 	for _, v := range engineSchematic {
 		engineSchematicByte = append(engineSchematicByte, []byte(v))
@@ -40,10 +40,12 @@ func Day3() {
 					//fmt.Printf("valid number: %v\n", v)
 					totalSum += int64(v)
 				}
+				// This is for part 2
 				l, b := isRatioNumber(currentNumber, row, col, engineSchematicByte)
 				if l {
 					gears[b] = append(gears[b], v)
 				}
+				// cleanup
 				currentNumber = ""
 			}
 		}
