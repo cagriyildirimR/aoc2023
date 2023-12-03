@@ -1,80 +1,84 @@
 package adventOfCode23
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
 
-func DayTwoPart1() {
-
-	limits := make(map[string]int)
-	limits["red"] = 12
-	limits["green"] = 13
-	limits["blue"] = 14
+func Day2() {
+	limits := map[string]int{"red": 12, "green": 13, "blue": 14}
 
 	_, input := Input(2)
+	games := parseInput(input)
 
-	result := 0
-
-	for _, v := range input {
-		result += checkPossibleGames(v, limits)
+	part1, part2 := 0, 0
+	for _, game := range games {
+		if isGamePossible(game, limits) {
+			part1 += game.id
+		}
+		part2 += calculateGamePower(game)
 	}
-	println(result)
+
+	println("Day 2, Part 1:")
+	fmt.Printf("Sum of IDs of games possible with limits (Red: %d, Green: %d, Blue: %d): %d\n", limits["red"], limits["green"], limits["blue"], part1)
+
+	println("\nDay 2, Part 2:")
+	fmt.Printf("Sum of the power of the minimum sets of cubes required for each game: %d\n", part2)
 }
 
-func DayTwoPart2() {
-	_, input := Input(2)
-
-	result := 0
-
-	for _, v := range input {
-		result += calculatePower(v)
-	}
-	println(result)
+// Game represents a single game's data.
+type Game struct {
+	id     int
+	rounds []map[string]int
 }
 
-func checkPossibleGames(ss string, limits map[string]int) int {
+// parseInput converts the raw input strings into structured Game data.
+func parseInput(input []string) []Game {
+	var games []Game
+	for _, line := range input {
+		parts := strings.Split(line, ":")
+		id, _ := strconv.Atoi(strings.Fields(parts[0])[1])
+		roundsData := strings.Split(parts[1], ";")
 
-	tmp := strings.Split(ss, ":")
-	id, _ := strconv.Atoi(strings.Split(tmp[0], " ")[1])
-	games := strings.Split(tmp[1], ";")
+		var rounds []map[string]int
+		for _, roundData := range roundsData {
+			round := make(map[string]int)
+			cubes := strings.Split(roundData, ",")
+			for _, cube := range cubes {
+				cube = strings.TrimSpace(cube)
+				parts := strings.Fields(cube)
+				count, _ := strconv.Atoi(parts[0])
+				round[parts[1]] = count
+			}
+			rounds = append(rounds, round)
+		}
+		games = append(games, Game{id: id, rounds: rounds})
+	}
+	return games
+}
 
-	for _, g := range games {
-		cubes := strings.Split(g, ",")
-		for _, c := range cubes {
-			c := strings.Trim(c, " ")
-			v := strings.Split(c, " ")
-
-			i, _ := strconv.Atoi(v[0])
-			if limits[v[1]] < i {
-				return 0
+// isGamePossible determines if a game could be played given the limits.
+func isGamePossible(game Game, limits map[string]int) bool {
+	for _, round := range game.rounds {
+		for color, count := range round {
+			if count > limits[color] {
+				return false
 			}
 		}
 	}
-	return id
+	return true
 }
 
-func calculatePower(ss string) int {
-
-	m := make(map[string]int)
-	m["red"] = 0
-	m["green"] = 0
-	m["blue"] = 0
-
-	tmp := strings.Split(ss, ":")
-	games := strings.Split(tmp[1], ";")
-
-	for _, g := range games {
-		cubes := strings.Split(g, ",")
-		for _, c := range cubes {
-			c := strings.Trim(c, " ")
-			v := strings.Split(c, " ")
-
-			i, _ := strconv.Atoi(v[0])
-			if m[v[1]] < i {
-				m[v[1]] = i
+// calculateGamePower calculates the power of the minimum set of cubes needed for a game.
+func calculateGamePower(game Game) int {
+	minCubes := map[string]int{"red": 0, "green": 0, "blue": 0}
+	for _, round := range game.rounds {
+		for color, count := range round {
+			if count > minCubes[color] {
+				minCubes[color] = count
 			}
 		}
 	}
-	return m["red"] * m["green"] * m["blue"]
+	return minCubes["red"] * minCubes["green"] * minCubes["blue"]
 }
