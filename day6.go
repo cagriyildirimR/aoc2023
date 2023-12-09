@@ -7,108 +7,86 @@ import (
 )
 
 type Race struct {
-	Duration int64
-	Distance int64
+	Duration, Distance int64
 }
 
-func (r *Race) String() string {
+func (r Race) String() string {
 	return fmt.Sprintf("Race lasts %v milliseconds and record distance is %v millimeters", r.Duration, r.Distance)
 }
 
 func Day6() {
-	_, input := Input(6)
+	races, extendedRace := parseInputDay6()
+	totalWays := int64(1)
 
-	time := strings.Fields(strings.Split(input[0], ":")[1])
-	distance := strings.Fields(strings.Split(input[1], ":")[1])
+	for _, race := range races {
+		totalWays *= calculateWinningWays(race)
+	}
+	fmt.Println("Total winning ways for all races:", totalWays)
+	fmt.Println("Winning ways for the extended race:", calculateWinningWays(extendedRace))
+}
+
+func parseInputDay6() ([]Race, Race) {
+	_, input := Input(6)
+	times := parseLine(input[0])
+	distances := parseLine(input[1])
+	extendedTime := parseLine(strings.ReplaceAll(input[0], " ", ""))[0]
+	extendedDistance := parseLine(strings.ReplaceAll(input[1], " ", ""))[0]
+
+	extendedRace := Race{
+		Duration: extendedTime,
+		Distance: extendedDistance,
+	}
 
 	var races []Race
-	for i := range time {
-		d, _ := strconv.ParseInt(time[i], 10, 64)
-		dd, _ := strconv.ParseInt(distance[i], 10, 64)
+	for i, time := range times {
 		races = append(races, Race{
-			Duration: d,
-			Distance: dd,
+			Duration: time,
+			Distance: distances[i],
 		})
 	}
-
-	result1 := int64(1)
-	for _, v := range races {
-		fmt.Println(v)
-		result1 *= possible(v)
-	}
-
-	fmt.Println(result1)
-
-	fmt.Println(possible(Race{
-		Duration: 54946592,
-		Distance: 302147610291404,
-	}))
-
-	x := Race{
-		Duration: 54946592,
-		Distance: 302147610291404,
-	}
-
-	l := LeftPossible(x, 0, x.Duration)
-	r := RightPossible(x, 0, x.Duration)
-
-	fmt.Printf("Left possible %v\n", l)
-	fmt.Printf("Right possible %v\n", r)
-	fmt.Println(r - l + 1)
-
+	return races, extendedRace
 }
 
-func possible(r Race) int64 {
-	var result int64
-	for i := int64(0); i < r.Duration; i++ {
-		if i*(r.Duration-i) >= r.Distance {
-			result++
+func parseLine(line string) []int64 {
+	fields := strings.Fields(strings.Split(line, ":")[1])
+	var numbers []int64
+	for _, f := range fields {
+		number, _ := strconv.ParseInt(f, 10, 64)
+		numbers = append(numbers, number)
+	}
+	return numbers
+}
+
+func calculateWinningWays(race Race) int64 {
+	left := findLeftMostPossible(race, 0, race.Duration)
+	right := findRightMostPossible(race, 0, race.Duration)
+	return right - left + 1
+}
+
+func findLeftMostPossible(race Race, low, high int64) int64 {
+	for low < high {
+		mid := low + (high-low)/2
+		if isValid(race, mid) {
+			high = mid
+		} else {
+			low = mid + 1
 		}
 	}
-	return result
+	return low
 }
 
-func LeftPossible(r Race, lo int64, hi int64) int64 {
-	mid := lo + (hi-lo)/2
-
-	if check(r, mid) && check(r, mid-1) {
-		hi = mid
-		return LeftPossible(r, lo, hi)
-	}
-	if !check(r, mid) && !check(r, mid+1) {
-		lo = mid
-		return LeftPossible(r, lo, hi)
-	}
-	if check(r, mid) && !check(r, mid-1) {
-		return mid
-	}
-
-	return 0
-}
-
-func RightPossible(r Race, lo, hi int64) int64 {
-	if hi-lo <= 1 {
-		if check(r, hi) {
-			return hi
+func findRightMostPossible(race Race, low, high int64) int64 {
+	for low < high {
+		mid := low + (high-low)/2
+		if isValid(race, mid+1) {
+			low = mid + 1
+		} else {
+			high = mid
 		}
-		return lo
 	}
-
-	mid := lo + (hi-lo)/2
-
-	if check(r, mid) && check(r, mid-1) {
-		return RightPossible(r, mid, hi)
-	}
-	if !check(r, mid) && !check(r, mid+1) {
-		return RightPossible(r, lo, mid)
-	}
-	if check(r, mid) && !check(r, mid+1) {
-		return mid
-	}
-
-	return 0
+	return low
 }
 
-func check(r Race, l int64) bool {
-	return l*(r.Duration-l) >= r.Distance
+func isValid(race Race, time int64) bool {
+	return time*(race.Duration-time) >= race.Distance
 }
