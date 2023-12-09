@@ -1,33 +1,55 @@
 package adventOfCode23
 
 import (
+	"errors"
 	"fmt"
+	"log"
 	"strconv"
+	"strings"
 	"unicode"
 )
 
+const DayOne = 1
+
 func Day1() {
-	err, calibrationInput := Input(1)
-	if err != nil {
-		fmt.Printf("Calibration data read error: %v", err)
-	}
+	input := getInput()
 
 	var sumOriginalValues int64
 	var sumAdjustedValues int64
 
-	for _, calibrationLine := range calibrationInput {
-		firstDigitOriginal := getFirstDigit(calibrationLine)
-		secondDigitOriginal := getSecondDigit(calibrationLine)
+	for _, calibrationLine := range input {
+		err, digitFromStart := getDigitFromStart(calibrationLine)
+		if err != nil {
+			log.Printf("encountered error while getting digits %v", err)
+		}
 
-		combinedDigits, _ := strconv.Atoi(firstDigitOriginal + secondDigitOriginal)
+		err, digitFromEnd := getDigitFromEnd(calibrationLine)
+		if err != nil {
+			log.Printf("encountered error while getting digits %v", err)
+		}
+
+		combinedDigits, err := strconv.Atoi(digitFromStart + digitFromEnd)
+		if err != nil {
+			log.Printf("cannot convert to digit, error: %v", err)
+		}
 		sumOriginalValues += int64(combinedDigits)
 
 		adjustedLine := replaceSpelledNumbersWithDigits(calibrationLine)
 
-		firstDigitAdjusted := getFirstDigit(adjustedLine)
-		secondDigitAdjusted := getSecondDigit(adjustedLine)
+		err, digitFromStartAdjusted := getDigitFromStart(adjustedLine)
+		if err != nil {
+			log.Printf("encountered error while getting digits %v", err)
+		}
 
-		combinedAdjustedDigits, _ := strconv.Atoi(firstDigitAdjusted + secondDigitAdjusted)
+		err, digitFromEndAdjusted := getDigitFromEnd(adjustedLine)
+		if err != nil {
+			log.Printf("encountered error while getting digits %v", err)
+		}
+
+		combinedAdjustedDigits, err := strconv.Atoi(digitFromStartAdjusted + digitFromEndAdjusted)
+		if err != nil {
+			log.Printf("cannot convert to digit, error: %v", err)
+		}
 		sumAdjustedValues += int64(combinedAdjustedDigits)
 	}
 
@@ -35,162 +57,66 @@ func Day1() {
 	fmt.Printf("Part 2 Solution: Sum of Adjusted Calibration Values is %v\n", sumAdjustedValues)
 }
 
-func getFirstDigit(ss string) string {
-	for _, v := range ss {
-		if unicode.IsDigit(v) {
-			return string(v)
-		}
+// getInput retrieves the calibration data for Day One from AdventOfCode.
+// Returns a slice of strings, each representing a line of calibration data.
+// If an error occurs during data retrieval, the error is printed and an empty slice is returned.
+func getInput() []string {
+	err, input := Input(DayOne)
+	if err != nil {
+		fmt.Printf("Calibration data read error: %v", err)
 	}
-	return "error"
+	return input
 }
 
-func getSecondDigit(ss string) string {
+// getDigitFromStart scans a string from left to right and returns the first digit it encounters.
+// If no digit is found, an error is returned.
+//
+// Input: ss - the string to be scanned for a digit.
+//
+// Output: The first digit found as a string, or an error if no digit is present.
+func getDigitFromStart(ss string) (error, string) {
+	for _, s := range ss {
+		if unicode.IsDigit(s) {
+			return nil, string(s)
+		}
+	}
+	return errors.New("error getting digit from start"), ""
+}
+
+// getDigitFromEnd scans a string from right to left and returns the first digit it encounters.
+// If no digit is found, an error is returned.
+//
+// Input: ss - the string to be scanned for a digit.
+//
+// return: The first digit found as a string, or an error if no digit is present.
+func getDigitFromEnd(ss string) (error, string) {
 	for i := len(ss) - 1; i >= 0; i-- {
 		v := rune(ss[i])
 		if unicode.IsDigit(v) {
-			return string(v)
+			return nil, string(v)
 		}
 	}
-	return "error"
+	return errors.New("error getting digit from end"), ""
 }
 
-// replaceSpelledNumbersWithDigits takes a string `ss` and replaces occurrences of spelled-out numbers (one, two, three, ..., nine)
-// with their corresponding single-digit numerals (1, 2, 3, ..., 9). The function scans the string from left to right,
-// and upon encountering a spelled-out number, it replaces only the first character of the spelled-out number with the
-// corresponding digit. The rest of the characters in the spelled-out number are left unchanged.
+// replaceSpelledNumbersWithDigits processes a string and replaces all spelled-out numbers (one, two, etc.)
+// with their corresponding digit characters (1, 2, etc.), ensuring digits in the output are numerically correct.
+// This aids in extracting consecutive digits from strings where numbers are spelled out.
 //
-// For example:
-// - "oneight" becomes "1eight" (replaces 'one' with '1').
-// - "twofive" becomes "2five" (replaces 'two' with '2').
-// - "threenine" becomes "3nine" (replaces 'three' with '3').
+// Example: "eightwo" is transformed to "ei8ht2o".
 //
-// The function is designed to work in a specific context where only the first and last digits in the resultant string
-// are considered significant for further processing. This behavior is crucial for the function's application in certain
-// scenarios, such as solving specific coding challenges or puzzles.
+// Input: s - the string with spelled-out numbers.
 //
-// Parameters:
-//
-//	ss (string): The input string to process.
-//
-// Returns:
-//
-//	string: A new string with spelled-out numbers replaced by their corresponding single-digit numerals.
-func replaceSpelledNumbersWithDigits(ss string) string {
-	var tmp = []byte(ss)
-	for i, s := range []byte(ss) {
-		switch s {
-		case 'o':
-			if i+2 < len(ss) {
-				if ss[i+1] == byte('n') && ss[i+2] == byte('e') {
-					tmp[i] = byte('1')
-				}
-			}
-		case 't':
-			if i+2 < len(ss) {
-				if ss[i+1] == byte('w') && ss[i+2] == byte('o') {
-					tmp[i] = byte('2')
-				}
-			}
-			if i+4 < len(ss) {
-				if ss[i+1] == byte('h') && ss[i+2] == byte('r') && ss[i+3] == byte('e') && ss[i+4] == byte('e') {
-					tmp[i] = byte('3')
-				}
-			}
-		case 'f':
-			if i+3 < len(ss) {
-				if ss[i+1] == byte('o') && ss[i+2] == byte('u') && ss[i+3] == byte('r') {
-					tmp[i] = byte('4')
-				}
-				if ss[i+1] == byte('i') && ss[i+2] == byte('v') && ss[i+3] == byte('e') {
-					tmp[i] = byte('5')
-				}
-			}
-		case 's':
-			if i+2 < len(ss) {
-				if ss[i+1] == byte('i') && ss[i+2] == byte('x') {
-					tmp[i] = byte('6')
-				}
-			}
-			if i+4 < len(ss) {
-				if ss[i+1] == byte('e') && ss[i+2] == byte('v') && ss[i+3] == byte('e') && ss[i+4] == byte('n') {
-					tmp[i] = byte('7')
-				}
-			}
-		case 'e':
-			if i+4 < len(ss) {
-				if ss[i+1] == byte('i') && ss[i+2] == byte('g') && ss[i+3] == byte('h') && ss[i+4] == byte('t') {
-					tmp[i] = byte('8')
-				}
-			}
-		case 'n':
-			if i+3 < len(ss) {
-				if ss[i+1] == byte('i') && ss[i+2] == byte('n') && ss[i+3] == byte('e') {
-					tmp[i] = byte('9')
-				}
-			}
-		}
-	}
-	return string(tmp)
+// Output: The string with spelled-out numbers replaced by their corresponding digits.
+func replaceSpelledNumbersWithDigits(s string) string {
+	s = strings.ReplaceAll(s, "one", "o1e")
+	s = strings.ReplaceAll(s, "two", "t2o")
+	s = strings.ReplaceAll(s, "three", "t3ree")
+	s = strings.ReplaceAll(s, "four", "f4ur")
+	s = strings.ReplaceAll(s, "five", "f5ve")
+	s = strings.ReplaceAll(s, "six", "s6x")
+	s = strings.ReplaceAll(s, "seven", "se7en")
+	s = strings.ReplaceAll(s, "eight", "ei8ht")
+	s = strings.ReplaceAll(s, "nine", "ni9e")
+	return s
 }
-
-// these functions don't work, but they are useful to know in similar situations
-//func replaceLettersX(s string) string {
-//	s = strings.ReplaceAll(s, "one", "1ne")
-//	s = strings.ReplaceAll(s, "two", "2wo")
-//	s = strings.ReplaceAll(s, "three", "3hree")
-//	s = strings.ReplaceAll(s, "four", "4our")
-//	s = strings.ReplaceAll(s, "five", "5ive")
-//	s = strings.ReplaceAll(s, "six", "6ix")
-//	s = strings.ReplaceAll(s, "seven", "7even")
-//	s = strings.ReplaceAll(s, "eight", "8ight")
-//	s = strings.ReplaceAll(s, "nine", "9ine")
-//	return s
-//}
-
-//func replaceLetters(s string) string {
-//	replacer := strings.NewReplacer(
-//		"one", "1ne",
-//		"two", "2wo",
-//		"three", "3hree",
-//		"four", "4our",
-//		"five", "5ive",
-//		"six", "6ix",
-//		"seven", "7even",
-//		"eight", "8eight",
-//		"nine", "9ine",
-//	)
-//	return replacer.Replace(s)
-//}
-
-//func replaceLetters(s string) string {
-//	numberWords := map[string]string{
-//		"one":   "1",
-//		"two":   "2",
-//		"three": "3",
-//		"four":  "4",
-//		"five":  "5",
-//		"six":   "6",
-//		"seven": "7",
-//		"eight": "8",
-//		"nine":  "9",
-//	}
-//
-//	var result strings.Builder
-//	for len(s) > 0 {
-//		matchFound := false
-//		for word, digit := range numberWords {
-//			if strings.HasPrefix(s, word) {
-//				result.WriteString(digit)
-//				s = s[len(word):]
-//				matchFound = true
-//				break
-//			}
-//		}
-//		if !matchFound {
-//			result.WriteByte(s[0])
-//			s = s[1:]
-//		}
-//	}
-//
-//	return result.String()
-//}
