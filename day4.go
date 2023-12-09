@@ -7,104 +7,85 @@ import (
 	"strings"
 )
 
-func Day4() {
-	_, inp := Input(4)
-	var w [218][10]int
-	var s [218][25]int
-	for i, v := range inp {
-		v = strings.Split(v, ":")[1]
-		tmp := strings.Split(v, "|")
-
-		for j, f := range strings.Fields(tmp[0]) {
-			va, _ := strconv.Atoi(f)
-			w[i][j] = va
-		}
-
-		for j, f := range strings.Fields(tmp[1]) {
-			va, _ := strconv.Atoi(f)
-			s[i][j] = va
-		}
-	}
-
-	var result1 float64
-	for i, v := range w {
-		fmt.Printf("Game %v\n", i)
-		tmp := checkCommonValues(v, s[i])
-		if tmp > 0 {
-			result1 += math.Pow(2, tmp-1)
-		}
-	}
-
-	println(int64(result1))
+type ScratchCard struct {
+	WinningNumbers []int
+	ScratchNumbers []int
 }
 
-func Day4Part2() {
-	_, inp := Input(4)
-	var w [218][10]int
-	var s [218][25]int
-	var r [218]int
-	cards := 0
+func Day4() {
+	cards := parseInputDay4()
+	Day4Part1(cards)
+	Day4Part2(cards)
+}
 
-	for i := range r {
-		r[i]++
+func parseInputDay4() []ScratchCard {
+	_, input := Input(4)
+	cards := make([]ScratchCard, len(input))
+
+	for i, line := range input {
+		line = strings.Split(line, ":")[1]
+		parts := strings.Split(line, "|")
+		cards[i].WinningNumbers = parseNumbers(strings.Fields(parts[0]))
+		cards[i].ScratchNumbers = parseNumbers(strings.Fields(parts[1]))
 	}
 
-	for i, v := range inp {
-		v = strings.Split(v, ":")[1]
-		tmp := strings.Split(v, "|")
+	return cards
+}
 
-		for j, f := range strings.Fields(tmp[0]) {
-			va, _ := strconv.Atoi(f)
-			w[i][j] = va
+func parseNumbers(fields []string) []int {
+	nums := make([]int, len(fields))
+	for i, field := range fields {
+		num, err := strconv.Atoi(field)
+		if err != nil {
+			fmt.Printf("Error parsing number: %v\n", err)
+			continue
 		}
+		nums[i] = num
+	}
+	return nums
+}
 
-		for j, f := range strings.Fields(tmp[1]) {
-			va, _ := strconv.Atoi(f)
-			s[i][j] = va
+func Day4Part1(cards []ScratchCard) {
+	var result float64
+	for _, card := range cards {
+		matches := checkCommonValues(card)
+		if matches > 0 {
+			result += math.Pow(2, float64(matches-1))
 		}
 	}
+	fmt.Printf("Total Points from Scratchcards (Part 1): %d\n", int64(result))
+}
 
-	for i, v := range w {
-		for r[i] > 0 {
-			cards++
-			r[i]--
-			tmp := checkCommonValues(v, s[i])
-			ind := i + 1
-			for tmp > 0 {
-				if ind < 218 {
-					r[ind]++
-					ind++
-				}
-				tmp--
+func Day4Part2(cards []ScratchCard) {
+	results := make([]int, len(cards))
+	for i := range results {
+		results[i]++
+	}
+
+	totalCards := 0
+
+	for i, card := range cards {
+		for results[i] > 0 {
+			totalCards++
+			results[i]--
+			matches := checkCommonValues(card)
+			for j := 0; j < matches && (i+j+1) < len(cards); j++ {
+				results[i+j+1]++
 			}
 		}
 	}
-	println(cards)
+	fmt.Printf("Total Number of Scratchcards After Processing (Part 2): %d\n", totalCards)
 }
 
-func checkCommonValues(a [10]int, b [25]int) float64 {
-	var result int
-	for _, v := range a {
-		for _, w := range b {
-			if v == w {
-				result++
+func checkCommonValues(card ScratchCard) int {
+	matchCount := 0
+	for _, w := range card.WinningNumbers {
+		for _, s := range card.ScratchNumbers {
+			if w == s {
+				matchCount++
 				break
 			}
 		}
 	}
-	return float64(result)
-}
-
-func set(a [25]int) [25]int {
-	neg := -1
-
-	for i, v := range a {
-		for j, w := range a {
-			if i != j && v == w {
-				a[i] = neg
-				neg--
-			}
-		}
-	}
-	return a
+	return matchCount
 }
