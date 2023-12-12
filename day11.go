@@ -9,8 +9,6 @@ type Galaxy struct {
 	X, Y int64
 }
 
-var expantionRate int64
-
 func (g *Galaxy) norm2(g2 Galaxy) float64 {
 	x := g.X - g2.X
 	y := g.Y - g2.Y
@@ -23,7 +21,7 @@ func (g *Galaxy) norm1(g2 Galaxy) int {
 	return int(math.Abs(float64(x)) + math.Abs(float64(y)))
 }
 
-func (g *Galaxy) calculateExpand(eh, ev []int64) {
+func (g *Galaxy) calculateExpand(eh, ev []int64, expansionRate int64) {
 	x := int64(0)
 	for _, v := range ev {
 		if v < g.X {
@@ -36,15 +34,13 @@ func (g *Galaxy) calculateExpand(eh, ev []int64) {
 			y++
 		}
 	}
-	g.X += x * expantionRate
-	g.Y += y * expantionRate
+	g.X += x * expansionRate
+	g.Y += y * expansionRate
 }
-
-type Galaxies []Galaxy
 
 func Day11() {
 	_, input := Input(11)
-	expantionRate = 999999
+	expansionRate := int64(999999)
 	//input := []string{
 	//	"...#......",
 	//	".......#..",
@@ -62,18 +58,18 @@ func Day11() {
 	var eV []int64
 
 	for i := range input {
-		if allDotsH(input[i]) {
+		if isAllDots(input[i]) {
 			eH = append(eH, int64(i))
 		}
 	}
 
 	for j := range input[0] {
-		if allDotsV(input, j) {
+		if isColumnAllDots(input, j) {
 			eV = append(eV, int64(j))
 		}
 	}
 
-	var gs Galaxies
+	var gs []Galaxy
 
 	for i := range input {
 		for j, v := range input[i] {
@@ -86,7 +82,7 @@ func Day11() {
 		}
 	}
 	for i := range gs {
-		gs[i].calculateExpand(eH, eV)
+		gs[i].calculateExpand(eH, eV, expansionRate)
 	}
 
 	var shortestDistance int64
@@ -99,7 +95,7 @@ func Day11() {
 	fmt.Println(shortestDistance)
 }
 
-func allDotsH(inp string) bool {
+func isAllDots(inp string) bool {
 	for _, v := range inp {
 		if v != '.' {
 			return false
@@ -108,7 +104,7 @@ func allDotsH(inp string) bool {
 	return true
 }
 
-func allDotsV(input []string, j int) bool {
+func isColumnAllDots(input []string, j int) bool {
 	for i := 0; i < len(input); i++ {
 		if input[i][j] != '.' {
 			return false
